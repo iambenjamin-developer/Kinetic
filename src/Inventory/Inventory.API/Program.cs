@@ -8,7 +8,7 @@ namespace Inventory.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +37,13 @@ namespace Inventory.API
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+
+            // Ejecutar seed de datos (migración + carga condicional)
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+                await DbInitializer.SeedDataAsync(context);
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
