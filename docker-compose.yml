@@ -1,0 +1,36 @@
+version: "3.5"
+
+services:
+  rabbitmq:
+    image: masstransit/rabbitmq
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASS}
+    restart: always
+
+  inventory-db:
+    image: postgres:17.5-alpine
+    container_name: inventory-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_INVENTORY_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_INVENTORY_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_INVENTORY_DB}
+    ports:
+      - "5432:5432"
+    restart: always
+
+  notification-db:
+    image: postgres:17.5-alpine
+    container_name: notification-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_NOTIFICATION_DB}
+    ports:
+      - "5433:5432"
+    restart: always
