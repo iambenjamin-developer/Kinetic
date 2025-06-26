@@ -14,5 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\shared\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\Notification.Application\Notification.Application.csproj" />
+    <ProjectReference Include="..\Notification.Infrastructure\Notification.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
