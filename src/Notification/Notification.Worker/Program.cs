@@ -1,4 +1,6 @@
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Notification.Infrastructure;
 using Notification.Worker.Consumers;
 
 namespace Notification.Worker
@@ -11,6 +13,12 @@ namespace Notification.Worker
             builder.Services.AddHostedService<Worker>();
 
 
+            // Add PostgreSQL DbContext
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<NotificationDbContext>(options =>
+                options.UseNpgsql(connectionString));
+
+            // Add RabbitMQ - MassTransit
             builder.Services.AddMassTransit(x =>
             {
                 x.AddConsumer<ProductMessageConsumer>();
