@@ -1,4 +1,7 @@
 
+using Inventory.API.Producers;
+using MassTransit;
+
 namespace Inventory.API
 {
     public class Program
@@ -8,6 +11,16 @@ namespace Inventory.API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host(builder.Configuration["RabbitMQ:Url"]);
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
+            //services.AddMassTransitHostedService();
+            builder.Services.AddScoped<QueueProducerService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
