@@ -1,6 +1,8 @@
 
 using Inventory.API.Producers;
+using Inventory.Infrastructure;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.API
 {
@@ -10,7 +12,14 @@ namespace Inventory.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Add PostgreSQL DbContext
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<InventoryDbContext>(options =>
+                options.UseNpgsql(connectionString));
+
             // Add services to the container.
+
+            // Add RabbitMQ - MassTransit
             builder.Services.AddMassTransit(x =>
             {
                 x.UsingRabbitMq((context, cfg) =>
