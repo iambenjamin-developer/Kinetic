@@ -11,14 +11,14 @@ namespace Inventory.API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly IPublishEndpoint _publishEndpoint;
-        private readonly QueueProducerService _queueProducerService;
+        //private readonly IPublishEndpoint _publishEndpoint;
+        //private readonly QueueProducerService _queueProducerService;
 
-        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, QueueProducerService queueProducerService)
+        public ProductsController(IProductService productService)//, IPublishEndpoint publishEndpoint, QueueProducerService queueProducerService)
         {
             _productService = productService;
-            _publishEndpoint = publishEndpoint;
-            _queueProducerService = queueProducerService;
+            //_publishEndpoint = publishEndpoint;
+            //_queueProducerService = queueProducerService;
         }
 
         // GET /api/products
