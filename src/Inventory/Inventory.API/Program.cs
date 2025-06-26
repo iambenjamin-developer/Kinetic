@@ -3,6 +3,7 @@ using Inventory.API.Producers;
 using Inventory.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Inventory.Application;
 
 namespace Inventory.API
 {
@@ -30,6 +31,9 @@ namespace Inventory.API
             });
             //services.AddMassTransitHostedService();
             builder.Services.AddScoped<QueueProducerService>();
+
+            //Add Application servicesAdd commentMore actions
+            builder.Services.AddApplicationServices(builder.Configuration);
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
