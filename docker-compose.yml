@@ -1,4 +1,4 @@
-version: "3.5"
+version: "3.8"
 
 services:
   rabbitmq:
@@ -6,11 +6,13 @@ services:
     container_name: rabbitmq
     hostname: rabbitmq
     ports:
-      - "15672:15672" # Puerto para UI web (http://localhost:15672)
-      - "5672:5672"   # Puerto para la app
+      - "15672:15672"
+      - "5672:5672"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASS}
+    networks:
+      - kinetic_network
     restart: always
 
   inventory-db:
@@ -24,6 +26,8 @@ services:
       - "5432:5432"
     volumes:
       - inventory_data:/var/lib/postgresql/data
+    networks:
+      - kinetic_network
     restart: always
 
   notification-db:
@@ -37,9 +41,17 @@ services:
       - "5433:5432"
     volumes:
       - notification_data:/var/lib/postgresql/data
+    networks:
+      - kinetic_network
     restart: always
 
 volumes:
   inventory_data:
+    name: inventory_volume
   notification_data:
+    name: notification_volume
 
+networks:
+  kinetic_network:
+    name: kinetic_network
+    driver: bridge

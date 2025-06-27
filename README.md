@@ -4,6 +4,20 @@ docker system prune --help
 
 docker system prune --all --volumes
 
+docker volume ls
+
+docker volume prune -f
+docker volume ls
+
+
+docker rm -f $(docker ps -aq)
+
+docker volume rm $(docker volume ls -q)
+
+docker rm -f $(docker ps -aq)            # elimina todos los contenedores
+docker volume rm $(docker volume ls -q)  # elimina todos los volúmenes
+
+
 [Inventario.API] -- POST /api/products
        |
     Envía mensaje a RabbitMQ (exchange: inventory_exchange, routingKey: product_created)

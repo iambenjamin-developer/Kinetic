@@ -51,6 +51,14 @@ namespace Notification.Worker
             });
 
             var host = builder.Build();
+
+            //  Ejecutar migraciones pendientes
+            using (var scope = host.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+                db.Database.Migrate();
+            }
+
             host.Run();
         }
     }
