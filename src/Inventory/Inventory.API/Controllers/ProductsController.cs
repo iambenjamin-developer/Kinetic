@@ -98,11 +98,11 @@ namespace Inventory.API.Controllers
                 var timeoutPolicy = Policy.TimeoutAsync(TimeSpan.FromSeconds(10));
                 var combined = Policy.WrapAsync(_circuitBreakerPolicy, timeoutPolicy);
 
-                await combined.ExecuteAsync(ct =>
+                await combined.ExecuteAsync(cancellationToken =>
                     _publishEndpoint.Publish(eventMessage, publishCtx =>
                     {
                         publishCtx.SetRoutingKey("product.created");
-                    }, ct),
+                    }, cancellationToken),
                     CancellationToken.None);
 
                 return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
@@ -113,11 +113,11 @@ namespace Inventory.API.Controllers
             }
             catch (BrokenCircuitException ex)
             {
-                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible actualmente.");
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
             }
             catch (Exception ex)
             {
-                throw;
+                return StatusCode(500, $"💥 Error inesperado: {ex.Message}");
             }
         }
 
