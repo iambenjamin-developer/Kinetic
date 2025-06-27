@@ -20,18 +20,20 @@ namespace Notification.Worker.Consumers
         public async Task Consume(ConsumeContext<ProductCreated> context)
         {
             var message = context.Message;
-            _logger.LogInformation($"\n{{\n  \"id\": \"{message.Id}\",\r\n  \"name\": \"{message.Name}\",\r\n  \"description\": \"{message.Description}\",\r\n  \"price\": {message.Price},\r\n  \"stock\": {message.Stock},\r\n  \"category\": {message.Category}\r\n}}\n");
 
+            var payload = JsonSerializer.Serialize(context.Message);
             // Aquí podrías guardar en DB o enviar notificaciones reales
             var log = new InventoryEventLog
             {
                 EventType = nameof(ProductCreated),
-                Payload = JsonSerializer.Serialize(context.Message),
+                Payload = payload,
                 ReceivedAt = DateTime.UtcNow
             };
 
             _context.InventoryEventLogs.Add(log);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(payload);
         }
     }
 }
