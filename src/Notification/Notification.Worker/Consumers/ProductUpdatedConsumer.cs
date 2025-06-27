@@ -1,16 +1,37 @@
-﻿using MassTransit;
+﻿using System.Text.Json;
+using MassTransit;
+using Notification.Domain.Entities;
+using Notification.Infrastructure;
 using SharedKernel.Contracts;
 
 namespace Notification.Worker.Consumers
 {
     public class ProductUpdatedConsumer : IConsumer<ProductUpdated>
     {
-        public Task Consume(ConsumeContext<ProductUpdated> context)
+        private readonly ILogger<ProductUpdatedConsumer> _logger;
+        private readonly NotificationDbContext _context;
+
+        public ProductUpdatedConsumer(ILogger<ProductUpdatedConsumer> logger, NotificationDbContext context)
         {
-            var msg = context.Message;
-            Console.WriteLine($"[Updated] Producto {msg.Id} actualizado a: {msg.Name} con stock {msg.Stock}");
-            return Task.CompletedTask;
+            _logger = logger;
+            _context = context;
+        }
+
+        public async Task Consume(ConsumeContext<ProductUpdated> context)
+        {
+            var payload = JsonSerializer.Serialize(context.Message);
+
+            var log = new InventoryEventLog
+            {
+                EventType = nameof(ProductUpdated),
+                Payload = payload,
+                ReceivedAt = DateTime.UtcNow
+            };
+
+            _context.InventoryEventLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(payload);
         }
     }
-
 }
