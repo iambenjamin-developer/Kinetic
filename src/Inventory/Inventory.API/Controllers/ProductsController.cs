@@ -48,7 +48,7 @@ namespace Inventory.API.Controllers
 
             // Crear y publicar el evento
             var productCreated = new ProductCreated(
-                Id: Guid.NewGuid(),
+                Id: newProductDto.Id,
                 Name: newProductDto.Name,
                 Description: newProductDto.Description,
                 Price: newProductDto.Price,
@@ -70,6 +70,8 @@ namespace Inventory.API.Controllers
             if (!isUpdated)
                 return NotFound($"Producto con Id: {id} no encontrado");
 
+            await _publishEndpoint.Publish(new ProductUpdated(id, dto.Name, dto.Stock));
+
             return NoContent(); // 204
         }
 
@@ -80,6 +82,8 @@ namespace Inventory.API.Controllers
             var isDeleted = await _productService.DeleteAsync(id);
             if (!isDeleted)
                 return NotFound($"Producto con Id: {id} no encontrado");
+
+            await _publishEndpoint.Publish(new ProductDeleted(id));
 
             return NoContent();
         }
