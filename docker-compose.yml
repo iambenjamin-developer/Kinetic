@@ -6,8 +6,8 @@ services:
     container_name: rabbitmq
     hostname: rabbitmq
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - "15672:15672" # Puerto para UI web (http://localhost:15672)
+      - "5672:5672"   # Puerto para la app
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASS}
@@ -22,6 +22,8 @@ services:
       - POSTGRES_DB=${POSTGRES_INVENTORY_DB}
     ports:
       - "5432:5432"
+    volumes:
+      - inventory_data:/var/lib/postgresql/data
     restart: always
 
   notification-db:
@@ -33,4 +35,11 @@ services:
       - POSTGRES_DB=${POSTGRES_NOTIFICATION_DB}
     ports:
       - "5433:5432"
+    volumes:
+      - notification_data:/var/lib/postgresql/data
     restart: always
+
+volumes:
+  inventory_data:
+  notification_data:
+
