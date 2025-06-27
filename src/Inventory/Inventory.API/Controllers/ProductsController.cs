@@ -3,6 +3,8 @@ using Inventory.Application.Interfaces;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Polly;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 using SharedKernel.Contracts;
 
 namespace Inventory.API.Controllers
@@ -80,24 +82,43 @@ namespace Inventory.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto dto)
         {
-            var newProductDto = await _productService.CreateAsync(dto);
+            try
+            {
+                var newProductDto = await _productService.CreateAsync(dto);
 
-            var eventMessage = new ProductCreated(
-                Id: newProductDto.Id,
-                Name: newProductDto.Name,
-                Description: newProductDto.Description,
-                Price: newProductDto.Price,
-                Stock: newProductDto.Stock,
-                Category: newProductDto.Category.Name
-            );
+                var eventMessage = new ProductCreated(
+                    Id: newProductDto.Id,
+                    Name: newProductDto.Name,
+                    Description: newProductDto.Description,
+                    Price: newProductDto.Price,
+                    Stock: newProductDto.Stock,
+                    Category: newProductDto.Category.Name
+                );
 
-            await _circuitBreakerPolicy.ExecuteAsync(() =>
-                _publishEndpoint.Publish(eventMessage, context =>
-                {
-                    context.SetRoutingKey("product.created");
-                }));
+                var timeoutPolicy = Policy.TimeoutAsync(TimeSpan.FromSeconds(10));
+                var combined = Policy.WrapAsync(_circuitBreakerPolicy, timeoutPolicy);
 
-            return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
+                await combined.ExecuteAsync(ct =>
+                    _publishEndpoint.Publish(eventMessage, publishCtx =>
+                    {
+                        publishCtx.SetRoutingKey("product.created");
+                    }, ct),
+                    CancellationToken.None);
+
+                return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
+            }
+            catch (TimeoutRejectedException ex)
+            {
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+            }
+            catch (BrokenCircuitException ex)
+            {
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible actualmente.");
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         // PUT /api/products/{id}
