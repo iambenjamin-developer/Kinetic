@@ -1,5 +1,11 @@
 # Kinetic
 
+docker-compose down
+
+docker volume ls
+
+docker volume rm inventory_volume notification_volume
+
 docker system prune --help
 
 docker system prune --all --volumes
