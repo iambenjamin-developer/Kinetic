@@ -12,21 +12,23 @@ namespace Notification.Worker
         {
             var builder = Host.CreateApplicationBuilder(args);
 
-            // Registrar servicio Worker
+            // Worker en segundo plano
             builder.Services.AddHostedService<Worker>();
 
-            // Configurar DbContext
+            // Configuración de la base de datos
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<NotificationDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
-            // Configurar MassTransit con RabbitMQ
+            // Configuración de MassTransit + RabbitMQ
             builder.Services.AddMassTransit(x =>
             {
+                // Registrar consumidores
                 x.AddConsumer<ProductCreatedConsumer>();
                 x.AddConsumer<ProductUpdatedConsumer>();
                 x.AddConsumer<ProductDeletedConsumer>();
 
+                // Configurar transporte RabbitMQ
                 x.UsingRabbitMq((context, cfg) =>
                 { /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
                     cfg.Host("localhost", "/", h =>
@@ -38,36 +40,39 @@ namespace Notification.Worker
                     // Exchange y colas manualmente asociadas
                     const string exchangeName = "inventory_exchange";
 
+                    // ---- Cola: producto creado ----
                     cfg.ReceiveEndpoint("product-created-queue", e =>
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductCreatedConsumer>(context);
-                        e.Bind(exchangeName, s =>
+                        e.Bind(exchangeName, b =>
                         {
-                            s.RoutingKey = "product.created";
-                            s.ExchangeType = ExchangeType.Direct;
+                            b.ExchangeType = ExchangeType.Direct;
+                            b.RoutingKey = "product.created";
                         });
                     });
 
+                    // ---- Cola: producto actualizado ----
                     cfg.ReceiveEndpoint("product-updated-queue", e =>
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductUpdatedConsumer>(context);
-                        e.Bind(exchangeName, s =>
+                        e.Bind(exchangeName, b =>
                         {
-                            s.RoutingKey = "product.updated";
-                            s.ExchangeType = ExchangeType.Direct;
+                            b.ExchangeType = ExchangeType.Direct;
+                            b.RoutingKey = "product.updated";
                         });
                     });
 
+                    // ---- Cola: producto eliminado ----
                     cfg.ReceiveEndpoint("product-deleted-queue", e =>
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductDeletedConsumer>(context);
-                        e.Bind(exchangeName, s =>
+                        e.Bind(exchangeName, b =>
                         {
-                            s.RoutingKey = "product.deleted";
-                            s.ExchangeType = ExchangeType.Direct;
+                            b.ExchangeType = ExchangeType.Direct;
+                            b.RoutingKey = "product.deleted";
                         });
                     });
                 });
@@ -75,7 +80,7 @@ namespace Notification.Worker
 
             var host = builder.Build();
 
-            // Ejecutar migraciones de EF Core si es necesario
+            // Migraciones EF Core
             using (var scope = host.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
