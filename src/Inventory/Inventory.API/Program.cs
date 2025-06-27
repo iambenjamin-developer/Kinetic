@@ -1,6 +1,4 @@
-﻿
-using Inventory.API.Producers;
-using Inventory.Infrastructure;
+﻿using Inventory.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Inventory.Application;
@@ -20,7 +18,6 @@ namespace Inventory.API
 
             // Add services to the container.
 
-
             // ➕ Agregar MassTransit con RabbitMQ
             builder.Services.AddMassTransit(x =>
             {
@@ -35,20 +32,6 @@ namespace Inventory.API
                     cfg.ConfigureEndpoints(context);
                 });
             });
-
-            /*
-            // Add RabbitMQ - MassTransit
-            builder.Services.AddMassTransit(x =>
-            {
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["RabbitMQ:Url"]);
-                    cfg.ConfigureEndpoints(context);
-                });
-            });
-            //services.AddMassTransitHostedService();
-            builder.Services.AddScoped<QueueProducerService>();
-            */
 
             //Add Application servicesAdd commentMore actions
             builder.Services.AddApplicationServices(builder.Configuration);

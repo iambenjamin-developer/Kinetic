@@ -2,7 +2,8 @@
 using Inventory.Application.Interfaces;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using SharedKernel.Events;
+using SharedKernel.Contracts;
+
 
 namespace Inventory.API.Controllers
 {

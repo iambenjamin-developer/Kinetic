@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using SharedKernel.Events;
+using SharedKernel.Contracts;
 
 namespace Notification.Worker.Consumers
 {
@@ -15,7 +15,7 @@ namespace Notification.Worker.Consumers
         public Task Consume(ConsumeContext<ProductCreated> context)
         {
             var message = context.Message;
-            _logger.LogInformation($"\n{message.Id}\n{{\r\n  \"name\": \"{message.Name}\",\r\n  \"description\": \"{message.Description}\",\r\n  \"price\": {message.Price},\r\n  \"stock\": {message.Stock},\r\n  \"categoryId\": {message.Category}\r\n}}");
+            _logger.LogInformation($"\n{{\n  \"id\": \"{message.Id}\",\r\n  \"name\": \"{message.Name}\",\r\n  \"description\": \"{message.Description}\",\r\n  \"price\": {message.Price},\r\n  \"stock\": {message.Stock},\r\n  \"category\": {message.Category}\r\n}}\n");
 
             // Aquí podrías guardar en DB o enviar notificaciones reales
             return Task.CompletedTask;

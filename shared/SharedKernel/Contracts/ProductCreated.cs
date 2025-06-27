@@ -1,4 +1,4 @@
-﻿namespace SharedKernel.Events
+﻿namespace SharedKernel.Contracts
 {
     public record ProductCreated(Guid Id, string Name, string Description, decimal Price, int Stock, string Category);
 }

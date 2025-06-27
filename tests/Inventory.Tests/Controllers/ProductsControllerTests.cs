@@ -1,6 +1,7 @@
 ﻿using Inventory.API.Controllers;
 using Inventory.Application.DTOs;
 using Inventory.Application.Interfaces;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -10,13 +11,16 @@ namespace Inventory.Tests.Controllers
     public class ProductsControllerTests
     {
         private readonly Mock<IProductService> _mockProductService;
+        private readonly Mock<IPublishEndpoint> _mockPublishEndpoint;
         private readonly ProductsController _controller;
 
         public ProductsControllerTests()
         {
             _mockProductService = new Mock<IProductService>();
+            _mockPublishEndpoint = new Mock<IPublishEndpoint>();
             _controller = new ProductsController(
-                _mockProductService.Object
+                _mockProductService.Object,
+                _mockPublishEndpoint.Object
             );
         }
 
