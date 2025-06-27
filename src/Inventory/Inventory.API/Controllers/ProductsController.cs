@@ -47,16 +47,19 @@ namespace Inventory.API.Controllers
             var newProductDto = await _productService.CreateAsync(dto);
 
             // Crear y publicar el evento
-            var productCreated = new ProductCreated(
-                Id: newProductDto.Id,
-                Name: newProductDto.Name,
-                Description: newProductDto.Description,
-                Price: newProductDto.Price,
-                Stock: newProductDto.Stock,
-                Category: newProductDto.Category.Name
-            );
-
-            await _publishEndpoint.Publish(productCreated);
+            await _publishEndpoint.Publish(new ProductCreated
+                (
+               Id: newProductDto.Id,
+               Name: newProductDto.Name,
+               Description: newProductDto.Description,
+               Price: newProductDto.Price,
+               Stock: newProductDto.Stock,
+               Category: newProductDto.Category.Name
+               ),
+                   context =>
+               {
+                   context.SetRoutingKey("product.created");
+               });
 
 
             return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
@@ -70,7 +73,11 @@ namespace Inventory.API.Controllers
             if (!isUpdated)
                 return NotFound($"Producto con Id: {id} no encontrado");
 
-            await _publishEndpoint.Publish(new ProductUpdated(id, dto.Name, dto.Stock));
+            await _publishEndpoint.Publish(new ProductUpdated(id, dto.Name, dto.Stock), context =>
+            {
+                context.SetRoutingKey("product.updated");
+            });
+
 
             return NoContent(); // 204
         }
@@ -83,7 +90,10 @@ namespace Inventory.API.Controllers
             if (!isDeleted)
                 return NotFound($"Producto con Id: {id} no encontrado");
 
-            await _publishEndpoint.Publish(new ProductDeleted(id));
+            await _publishEndpoint.Publish(new ProductDeleted(id), context =>
+            {
+                context.SetRoutingKey("product.deleted");
+            });
 
             return NoContent();
         }

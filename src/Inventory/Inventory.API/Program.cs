@@ -1,7 +1,9 @@
-﻿using Inventory.Infrastructure;
+﻿using Inventory.Application;
+using Inventory.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Inventory.Application;
+using RabbitMQ.Client;
+using SharedKernel.Contracts;
 
 namespace Inventory.API
 {
@@ -18,18 +20,41 @@ namespace Inventory.API
 
             // Add services to the container.
 
-            // ➕ Agregar MassTransit con RabbitMQ
+            // ➕ MassTransit + RabbitMQ
             builder.Services.AddMassTransit(x =>
             {
+                x.SetKebabCaseEndpointNameFormatter();
+
                 x.UsingRabbitMq((context, cfg) =>
-                {   /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
+                { /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
                     cfg.Host("localhost", "/", h =>
                     {
                         h.Username("rabbitAdmin");
                         h.Password("secretPassword");
                     });
 
-                    cfg.ConfigureEndpoints(context);
+                    const string exchangeName = "inventory_exchange";
+
+                    // Asignar exchange común
+                    cfg.Message<ProductCreated>(m => m.SetEntityName(exchangeName));
+                    cfg.Publish<ProductCreated>(p =>
+                    {
+                        p.ExchangeType = ExchangeType.Direct;
+                    });
+
+                    cfg.Message<ProductUpdated>(m => m.SetEntityName(exchangeName));
+                    cfg.Publish<ProductUpdated>(p =>
+                    {
+                        p.ExchangeType = ExchangeType.Direct;
+                    });
+
+                    cfg.Message<ProductDeleted>(m => m.SetEntityName(exchangeName));
+                    cfg.Publish<ProductDeleted>(p =>
+                    {
+                        p.ExchangeType = ExchangeType.Direct;
+                    });
+
+                    // ⚠️ NO usar ConfigureEndpoints ya que esta API no consume mensajes
                 });
             });
 
