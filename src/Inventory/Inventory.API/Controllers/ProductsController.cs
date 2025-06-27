@@ -1,8 +1,8 @@
-﻿using Inventory.API.Producers;
-using Inventory.Application.DTOs;
+﻿using Inventory.Application.DTOs;
 using Inventory.Application.Interfaces;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using SharedKernel.Events;
 
 namespace Inventory.API.Controllers
 {
@@ -11,14 +11,13 @@ namespace Inventory.API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-        //private readonly IPublishEndpoint _publishEndpoint;
-        //private readonly QueueProducerService _queueProducerService;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public ProductsController(IProductService productService)//, IPublishEndpoint publishEndpoint, QueueProducerService queueProducerService)
+
+        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint)
         {
             _productService = productService;
-            //_publishEndpoint = publishEndpoint;
-            //_queueProducerService = queueProducerService;
+            _publishEndpoint = publishEndpoint;
         }
 
         // GET /api/products
@@ -44,9 +43,22 @@ namespace Inventory.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto dto)
         {
-            var created = await _productService.CreateAsync(dto);
+            var newProductDto = await _productService.CreateAsync(dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            // Crear y publicar el evento
+            var productCreated = new ProductCreated(
+                Id: Guid.NewGuid(),
+                Name: newProductDto.Name,
+                Description: newProductDto.Description,
+                Price: newProductDto.Price,
+                Stock: newProductDto.Stock,
+                Category: newProductDto.Category.Name
+            );
+
+            await _publishEndpoint.Publish(productCreated);
+
+
+            return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
         }
 
         // PUT /api/products/{id}

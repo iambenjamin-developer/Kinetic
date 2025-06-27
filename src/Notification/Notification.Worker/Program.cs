@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Notification.Infrastructure;
 using Notification.Worker.Consumers;
@@ -18,7 +18,28 @@ namespace Notification.Worker
             builder.Services.AddDbContext<NotificationDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
-            // Add RabbitMQ - MassTransit
+            // ⬇️ Configurar MassTransit
+            builder.Services.AddMassTransit(x =>
+            {
+                x.AddConsumer<ProductCreatedConsumer>();
+
+                x.UsingRabbitMq((context, cfg) =>
+                {   /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
+                    cfg.Host("localhost", "/", h =>
+                    {
+                        h.Username("rabbitAdmin");
+                        h.Password("secretPassword");
+                    });
+
+                    cfg.ReceiveEndpoint("product-created-queue", e =>
+                    {
+                        e.ConfigureConsumer<ProductCreatedConsumer>(context);
+                    });
+                });
+            });
+
+            /*
+              // Add RabbitMQ - MassTransit
             builder.Services.AddMassTransit(x =>
             {
                 x.AddConsumer<ProductMessageConsumer>();
@@ -39,6 +60,9 @@ namespace Notification.Worker
             });
 
             //services.AddMassTransitHostedService();
+             
+             */
+
 
             var host = builder.Build();
             host.Run();

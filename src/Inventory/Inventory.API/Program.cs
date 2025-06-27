@@ -1,4 +1,4 @@
-
+﻿
 using Inventory.API.Producers;
 using Inventory.Infrastructure;
 using MassTransit;
@@ -20,6 +20,23 @@ namespace Inventory.API
 
             // Add services to the container.
 
+
+            // ➕ Agregar MassTransit con RabbitMQ
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {   /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
+                    cfg.Host("localhost", "/", h =>
+                    {
+                        h.Username("rabbitAdmin");
+                        h.Password("secretPassword");
+                    });
+
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
+
+            /*
             // Add RabbitMQ - MassTransit
             builder.Services.AddMassTransit(x =>
             {
@@ -31,6 +48,7 @@ namespace Inventory.API
             });
             //services.AddMassTransitHostedService();
             builder.Services.AddScoped<QueueProducerService>();
+            */
 
             //Add Application servicesAdd commentMore actions
             builder.Services.AddApplicationServices(builder.Configuration);
@@ -42,7 +60,7 @@ namespace Inventory.API
 
             var app = builder.Build();
 
-            // Ejecutar seed de datos (migraci�n + carga condicional)
+            // Ejecutar seed de datos (migración + carga condicional)
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
