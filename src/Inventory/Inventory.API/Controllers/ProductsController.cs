@@ -2,8 +2,8 @@
 using Inventory.Application.Interfaces;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Polly;
 using SharedKernel.Contracts;
-
 
 namespace Inventory.API.Controllers
 {
@@ -13,13 +13,49 @@ namespace Inventory.API.Controllers
     {
         private readonly IProductService _productService;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly AsyncPolicy _circuitBreakerPolicy;
 
-
-        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint)
+        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, AsyncPolicy circuitBreakerPolicy)
         {
             _productService = productService;
             _publishEndpoint = publishEndpoint;
+            _circuitBreakerPolicy = circuitBreakerPolicy;
         }
+
+
+        [HttpPost("test-circuit")]
+        public async Task<IActionResult> TestCircuitBreaker([FromBody] CreateProductDto dto)
+        {
+            var eventMessage = new ProductCreated(
+                Id: 999,
+                Name: "Simulado",
+                Description: "Test",
+                Price: 100,
+                Stock: 5,
+                Category: "Test"
+            );
+
+            try
+            {
+                await _circuitBreakerPolicy.ExecuteAsync(() =>
+                {
+                    // ⚠️ Simular error forzado
+                    throw new Exception("❌ Falla simulada para probar Polly Circuit Breaker");
+                });
+
+                return Ok("✅ Ejecutado normalmente (no debería ocurrir más de 2 veces)");
+            }
+            catch (Polly.CircuitBreaker.BrokenCircuitException)
+            {
+                return StatusCode(503, "⛔ Circuito abierto - Polly está bloqueando la ejecución.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"💥 Error al ejecutar lógica: {ex.Message}");
+            }
+        }
+
+
 
         // GET /api/products
         [HttpGet]
@@ -46,21 +82,20 @@ namespace Inventory.API.Controllers
         {
             var newProductDto = await _productService.CreateAsync(dto);
 
-            // Crear y publicar el evento
-            await _publishEndpoint.Publish(new ProductCreated
-                (
-               Id: newProductDto.Id,
-               Name: newProductDto.Name,
-               Description: newProductDto.Description,
-               Price: newProductDto.Price,
-               Stock: newProductDto.Stock,
-               Category: newProductDto.Category.Name
-               ),
-                   context =>
-               {
-                   context.SetRoutingKey("product.created");
-               });
+            var eventMessage = new ProductCreated(
+                Id: newProductDto.Id,
+                Name: newProductDto.Name,
+                Description: newProductDto.Description,
+                Price: newProductDto.Price,
+                Stock: newProductDto.Stock,
+                Category: newProductDto.Category.Name
+            );
 
+            await _circuitBreakerPolicy.ExecuteAsync(() =>
+                _publishEndpoint.Publish(eventMessage, context =>
+                {
+                    context.SetRoutingKey("product.created");
+                }));
 
             return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
         }
@@ -73,13 +108,15 @@ namespace Inventory.API.Controllers
             if (!isUpdated)
                 return NotFound($"Producto con Id: {id} no encontrado");
 
-            await _publishEndpoint.Publish(new ProductUpdated(id, dto.Name, dto.Stock), context =>
-            {
-                context.SetRoutingKey("product.updated");
-            });
+            var eventMessage = new ProductUpdated(id, dto.Name, dto.Stock);
 
+            await _circuitBreakerPolicy.ExecuteAsync(() =>
+                _publishEndpoint.Publish(eventMessage, context =>
+                {
+                    context.SetRoutingKey("product.updated");
+                }));
 
-            return NoContent(); // 204
+            return NoContent();
         }
 
         // DELETE /api/products/{id}
@@ -90,10 +127,13 @@ namespace Inventory.API.Controllers
             if (!isDeleted)
                 return NotFound($"Producto con Id: {id} no encontrado");
 
-            await _publishEndpoint.Publish(new ProductDeleted(id), context =>
-            {
-                context.SetRoutingKey("product.deleted");
-            });
+            var eventMessage = new ProductDeleted(id);
+
+            await _circuitBreakerPolicy.ExecuteAsync(() =>
+                _publishEndpoint.Publish(eventMessage, context =>
+                {
+                    context.SetRoutingKey("product.deleted");
+                }));
 
             return NoContent();
         }

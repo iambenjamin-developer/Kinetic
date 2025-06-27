@@ -2,6 +2,7 @@
 using Inventory.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using RabbitMQ.Client;
 using SharedKernel.Contracts;
 
@@ -60,6 +61,14 @@ namespace Inventory.API
 
             //Add Application servicesAdd commentMore actions
             builder.Services.AddApplicationServices(builder.Configuration);
+
+            // Registrar el Circuit Breaker como Singleton
+            builder.Services.AddSingleton<AsyncPolicy>(Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(
+                    exceptionsAllowedBeforeBreaking: 2, //Dejar Tolerancia: 3 fallos
+                    durationOfBreak: TimeSpan.FromSeconds(8)) //Dejar Corte: 30 segundos
+            );
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
