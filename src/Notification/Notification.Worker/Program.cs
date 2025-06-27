@@ -40,6 +40,7 @@ namespace Notification.Worker
 
                     cfg.ReceiveEndpoint("product-created-queue", e =>
                     {
+                        e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductCreatedConsumer>(context);
                         e.Bind(exchangeName, s =>
                         {
@@ -50,6 +51,7 @@ namespace Notification.Worker
 
                     cfg.ReceiveEndpoint("product-updated-queue", e =>
                     {
+                        e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductUpdatedConsumer>(context);
                         e.Bind(exchangeName, s =>
                         {
@@ -60,6 +62,7 @@ namespace Notification.Worker
 
                     cfg.ReceiveEndpoint("product-deleted-queue", e =>
                     {
+                        e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5))); // 3 reintentos cada 5s
                         e.ConfigureConsumer<ProductDeletedConsumer>(context);
                         e.Bind(exchangeName, s =>
                         {
