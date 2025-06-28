@@ -29,11 +29,15 @@ namespace Inventory.API
                 x.SetKebabCaseEndpointNameFormatter();
 
                 x.UsingRabbitMq((context, cfg) =>
-                { /*Nombre que tiene en el docker-compose 'rabbitmq', si probamos en local 'localhost'*/
-                    cfg.Host("localhost", "/", h =>
+                { 
+                    var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+                    var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "rabbitAdmin";
+                    var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "secretPassword";
+                    
+                    cfg.Host(rabbitHost, "/", h =>
                     {
-                        h.Username("rabbitAdmin");
-                        h.Password("secretPassword");
+                        h.Username(rabbitUser);
+                        h.Password(rabbitPass);
                     });
 
                     const string exchangeName = "inventory_exchange";
