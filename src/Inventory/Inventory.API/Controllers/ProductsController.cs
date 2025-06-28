@@ -24,17 +24,33 @@ namespace Inventory.API.Controllers
             _resiliencePolicy = resiliencePolicy;
         }
 
-
-        // GET /api/products
+        /// <summary>
+        /// Obtiene la lista de todos los productos disponibles.
+        /// </summary>
+        /// <remarks>
+        /// Este endpoint devuelve todos los productos registrados en el sistema.
+        /// </remarks>
+        /// <response code="200">Lista de productos obtenida correctamente.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<ProductDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll()
         {
             var dtos = await _productService.GetAllAsync();
             return Ok(dtos);
         }
 
-        // GET /api/products/{id}
+        /// <summary>
+        /// Obtiene los detalles de un producto específico.
+        /// </summary>
+        /// <param name="id">ID del producto.</param>
+        /// <remarks>
+        /// Devuelve el producto que coincide con el ID proporcionado.
+        /// </remarks>
+        /// <response code="200">Producto encontrado.</response>
+        /// <response code="404">Producto no encontrado.</response>
         [HttpGet("{id:long}")]
+        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ProductDto>> GetById(long id)
         {
             var dto = await _productService.GetByIdAsync(id);
@@ -44,8 +60,23 @@ namespace Inventory.API.Controllers
             return Ok(dto);
         }
 
-        // POST /api/products
+        /// <summary>
+        /// Crea un nuevo producto.
+        /// </summary>
+        /// <param name="dto">Datos del producto a crear.</param>
+        /// <remarks>
+        /// Crea un producto en la base de datos y publica un evento `ProductCreated` mediante RabbitMQ.
+        /// Se aplican políticas de resiliencia (timeout y circuit breaker).
+        /// </remarks>
+        /// <response code="201">Producto creado correctamente.</response>
+        /// <response code="504">Tiempo de espera agotado al publicar el evento.</response>
+        /// <response code="503">Circuito abierto - RabbitMQ no disponible.</response>
+        /// <response code="500">Error inesperado.</response>
         [HttpPost]
+        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto dto)
         {
             try
@@ -61,7 +92,6 @@ namespace Inventory.API.Controllers
                     Category: newProductDto.Category.Name
                 );
 
-
                 await _resiliencePolicy.ExecuteAsync(cancellationToken =>
                     _publishEndpoint.Publish(eventMessage, publishCtx =>
                     {
@@ -71,11 +101,11 @@ namespace Inventory.API.Controllers
 
                 return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
             }
-            catch (TimeoutRejectedException ex)
+            catch (TimeoutRejectedException)
             {
                 return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
             }
-            catch (BrokenCircuitException ex)
+            catch (BrokenCircuitException)
             {
                 return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
             }
@@ -85,8 +115,26 @@ namespace Inventory.API.Controllers
             }
         }
 
-        // PUT /api/products/{id}
+        /// <summary>
+        /// Actualiza un producto existente.
+        /// </summary>
+        /// <param name="id">ID del producto a actualizar.</param>
+        /// <param name="dto">Datos actualizados del producto.</param>
+        /// <remarks>
+        /// Actualiza la información del producto y publica un evento `ProductUpdated`.
+        /// Se aplican políticas de resiliencia.
+        /// </remarks>
+        /// <response code="204">Actualización exitosa.</response>
+        /// <response code="404">Producto no encontrado.</response>
+        /// <response code="504">Timeout al publicar el evento.</response>
+        /// <response code="503">Circuito abierto.</response>
+        /// <response code="500">Error inesperado.</response>
         [HttpPut("{id:long}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Update(long id, [FromBody] UpdateProductDto dto)
         {
             try
@@ -106,11 +154,11 @@ namespace Inventory.API.Controllers
 
                 return NoContent();
             }
-            catch (TimeoutRejectedException ex)
+            catch (TimeoutRejectedException)
             {
                 return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
             }
-            catch (BrokenCircuitException ex)
+            catch (BrokenCircuitException)
             {
                 return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
             }
@@ -120,11 +168,27 @@ namespace Inventory.API.Controllers
             }
         }
 
-        // DELETE /api/products/{id}
+        /// <summary>
+        /// Elimina un producto por su ID.
+        /// </summary>
+        /// <param name="id">ID del producto a eliminar.</param>
+        /// <remarks>
+        /// Elimina el producto de la base de datos y publica un evento `ProductDeleted`.
+        /// Se aplican políticas de resiliencia.
+        /// </remarks>
+        /// <response code="204">Eliminación exitosa.</response>
+        /// <response code="404">Producto no encontrado.</response>
+        /// <response code="504">Timeout al publicar el evento.</response>
+        /// <response code="503">Circuito abierto.</response>
+        /// <response code="500">Error inesperado.</response>
         [HttpDelete("{id:long}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(long id)
         {
-
             try
             {
                 var isDeleted = await _productService.DeleteAsync(id);
@@ -142,11 +206,11 @@ namespace Inventory.API.Controllers
 
                 return NoContent();
             }
-            catch (TimeoutRejectedException ex)
+            catch (TimeoutRejectedException)
             {
                 return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
             }
-            catch (BrokenCircuitException ex)
+            catch (BrokenCircuitException)
             {
                 return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
             }
@@ -154,7 +218,6 @@ namespace Inventory.API.Controllers
             {
                 return StatusCode(500, $"💥 Error inesperado: {ex.Message}");
             }
-
         }
     }
 }
