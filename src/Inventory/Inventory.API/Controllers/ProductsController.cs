@@ -15,9 +15,9 @@ namespace Inventory.API.Controllers
     {
         private readonly IProductService _productService;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly AsyncPolicy _resiliencePolicy;
+        private readonly IResiliencePolicy _resiliencePolicy;
 
-        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, AsyncPolicy resiliencePolicy)
+        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, IResiliencePolicy resiliencePolicy)
         {
             _productService = productService;
             _publishEndpoint = publishEndpoint;

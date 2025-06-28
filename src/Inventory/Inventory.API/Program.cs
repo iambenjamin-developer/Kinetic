@@ -1,4 +1,6 @@
-﻿using Inventory.Application;
+﻿using Inventory.API.Policies;
+using Inventory.Application;
+using Inventory.Application.Interfaces;
 using Inventory.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -62,21 +64,21 @@ namespace Inventory.API
             //Add Application servicesAdd commentMore actions
             builder.Services.AddApplicationServices(builder.Configuration);
 
-            // Registrar Circuit Breaker y Timeout como Singleton
-            builder.Services.AddSingleton<AsyncPolicy>(provider =>
+            // Registrar políticas resilientes (Timeout + CircuitBreaker) y adaptador personalizado
+            builder.Services.AddSingleton<IResiliencePolicy>(provider =>
             {
-                // Circuit Breaker: 2 fallos antes de abrir, durante 8 segundos
-                var breaker = Policy
-                    .Handle<Exception>()
-                    .CircuitBreakerAsync(2, TimeSpan.FromSeconds(8));
-
                 // Timeout: 10 segundos
                 var timeout = Policy.TimeoutAsync(TimeSpan.FromSeconds(10));
 
-                // Unificamos ambas
-                return Policy.WrapAsync(breaker, timeout);
-            });
+                // Circuit Breaker: 2 fallos antes de abrir, durante 8 segundos
+                var circuitBreaker = Policy
+                    .Handle<Exception>()
+                    .CircuitBreakerAsync(2, TimeSpan.FromSeconds(8));
 
+                // Unificamos ambas
+                var combined = Policy.WrapAsync(circuitBreaker, timeout);
+                return new ResiliencePolicy(combined);
+            });
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
