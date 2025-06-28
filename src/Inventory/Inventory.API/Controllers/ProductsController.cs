@@ -15,48 +15,14 @@ namespace Inventory.API.Controllers
     {
         private readonly IProductService _productService;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly AsyncPolicy _circuitBreakerPolicy;
+        private readonly AsyncPolicy _resiliencePolicy;
 
-        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, AsyncPolicy circuitBreakerPolicy)
+        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, AsyncPolicy resiliencePolicy)
         {
             _productService = productService;
             _publishEndpoint = publishEndpoint;
-            _circuitBreakerPolicy = circuitBreakerPolicy;
+            _resiliencePolicy = resiliencePolicy;
         }
-
-
-        [HttpPost("test-circuit")]
-        public async Task<IActionResult> TestCircuitBreaker([FromBody] CreateProductDto dto)
-        {
-            var eventMessage = new ProductCreated(
-                Id: 999,
-                Name: "Simulado",
-                Description: "Test",
-                Price: 100,
-                Stock: 5,
-                Category: "Test"
-            );
-
-            try
-            {
-                await _circuitBreakerPolicy.ExecuteAsync(() =>
-                {
-                    // ⚠️ Simular error forzado
-                    throw new Exception("❌ Falla simulada para probar Polly Circuit Breaker");
-                });
-
-                return Ok("✅ Ejecutado normalmente (no debería ocurrir más de 2 veces)");
-            }
-            catch (Polly.CircuitBreaker.BrokenCircuitException)
-            {
-                return StatusCode(503, "⛔ Circuito abierto - Polly está bloqueando la ejecución.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"💥 Error al ejecutar lógica: {ex.Message}");
-            }
-        }
-
 
 
         // GET /api/products
@@ -95,10 +61,8 @@ namespace Inventory.API.Controllers
                     Category: newProductDto.Category.Name
                 );
 
-                var timeoutPolicy = Policy.TimeoutAsync(TimeSpan.FromSeconds(10));
-                var combined = Policy.WrapAsync(_circuitBreakerPolicy, timeoutPolicy);
 
-                await combined.ExecuteAsync(cancellationToken =>
+                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
                     _publishEndpoint.Publish(eventMessage, publishCtx =>
                     {
                         publishCtx.SetRoutingKey("product.created");
@@ -125,38 +89,72 @@ namespace Inventory.API.Controllers
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] UpdateProductDto dto)
         {
-            bool isUpdated = await _productService.UpdateAsync(id, dto);
-            if (!isUpdated)
-                return NotFound($"Producto con Id: {id} no encontrado");
+            try
+            {
+                bool isUpdated = await _productService.UpdateAsync(id, dto);
+                if (!isUpdated)
+                    return NotFound($"Producto con Id: {id} no encontrado");
 
-            var eventMessage = new ProductUpdated(id, dto.Name, dto.Stock);
+                var eventMessage = new ProductUpdated(id, dto.Name, dto.Stock);
 
-            await _circuitBreakerPolicy.ExecuteAsync(() =>
-                _publishEndpoint.Publish(eventMessage, context =>
-                {
-                    context.SetRoutingKey("product.updated");
-                }));
+                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
+                    _publishEndpoint.Publish(eventMessage, context =>
+                    {
+                        context.SetRoutingKey("product.updated");
+                    }, cancellationToken),
+                    CancellationToken.None);
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (TimeoutRejectedException ex)
+            {
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+            }
+            catch (BrokenCircuitException ex)
+            {
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"💥 Error inesperado: {ex.Message}");
+            }
         }
 
         // DELETE /api/products/{id}
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var isDeleted = await _productService.DeleteAsync(id);
-            if (!isDeleted)
-                return NotFound($"Producto con Id: {id} no encontrado");
 
-            var eventMessage = new ProductDeleted(id);
+            try
+            {
+                var isDeleted = await _productService.DeleteAsync(id);
+                if (!isDeleted)
+                    return NotFound($"Producto con Id: {id} no encontrado");
 
-            await _circuitBreakerPolicy.ExecuteAsync(() =>
-                _publishEndpoint.Publish(eventMessage, context =>
-                {
-                    context.SetRoutingKey("product.deleted");
-                }));
+                var eventMessage = new ProductDeleted(id);
 
-            return NoContent();
+                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
+                    _publishEndpoint.Publish(eventMessage, context =>
+                    {
+                        context.SetRoutingKey("product.deleted");
+                    }, cancellationToken),
+                    CancellationToken.None);
+
+                return NoContent();
+            }
+            catch (TimeoutRejectedException ex)
+            {
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+            }
+            catch (BrokenCircuitException ex)
+            {
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"💥 Error inesperado: {ex.Message}");
+            }
+
         }
     }
 }

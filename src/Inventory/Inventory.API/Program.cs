@@ -62,13 +62,21 @@ namespace Inventory.API
             //Add Application servicesAdd commentMore actions
             builder.Services.AddApplicationServices(builder.Configuration);
 
-            // Registrar el Circuit Breaker como Singleton
-            builder.Services.AddSingleton<AsyncPolicy>(Policy
-                .Handle<Exception>()
-                .CircuitBreakerAsync(
-                    exceptionsAllowedBeforeBreaking: 2, //Dejar Tolerancia: 3 fallos
-                    durationOfBreak: TimeSpan.FromSeconds(8)) //Dejar Corte: 30 segundos
-            );
+            // Registrar Circuit Breaker y Timeout como Singleton
+            builder.Services.AddSingleton<AsyncPolicy>(provider =>
+            {
+                // Circuit Breaker: 2 fallos antes de abrir, durante 8 segundos
+                var breaker = Policy
+                    .Handle<Exception>()
+                    .CircuitBreakerAsync(2, TimeSpan.FromSeconds(8));
+
+                // Timeout: 10 segundos
+                var timeout = Policy.TimeoutAsync(TimeSpan.FromSeconds(10));
+
+                // Unificamos ambas
+                return Policy.WrapAsync(breaker, timeout);
+            });
+
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
