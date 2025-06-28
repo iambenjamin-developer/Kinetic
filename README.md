@@ -1,5 +1,7 @@
 # Kinetic
 
+http://localhost:5000/swagger/index.html
+
 docker compose down -v
 docker system prune -af
 docker volume ls
