@@ -1,5 +1,14 @@
 # Kinetic
 
+docker compose down -v
+docker system prune -af
+docker volume ls
+docker volume rm
+
+docker-compose up --build -d
+
+
+
 docker-compose down -v
 docker volume prune -f
 docker volume ls
