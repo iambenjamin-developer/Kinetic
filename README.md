@@ -2,6 +2,11 @@
 
 docker-compose down -v
 docker volume prune -f
+docker volume ls
+docker volume rm inventory_volume notification_volume
+
+docker system prune --all --volumes
+
 docker-compose up -d
 
 
@@ -10,11 +15,10 @@ docker-compose down
 
 docker volume ls
 
-docker volume rm inventory_volume notification_volume
+
 
 docker system prune --help
 
-docker system prune --all --volumes
 
 docker volume ls
 
