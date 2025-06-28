@@ -34,6 +34,14 @@ namespace Notification.Worker.Consumers
 
             var message = context.Message;
 
+            _logger.LogInformation($"=== RECIBIDO: ProductCreated Event ===");
+            _logger.LogInformation($"ID: {message.Id}");
+            _logger.LogInformation($"Name: {message.Name}");
+            _logger.LogInformation($"Description: {message.Description}");
+            _logger.LogInformation($"Price: {message.Price}");
+            _logger.LogInformation($"Stock: {message.Stock}");
+            _logger.LogInformation($"Category: {message.Category}");
+
             var payload = JsonSerializer.Serialize(context.Message);
             // Aquí podrías guardar en DB o enviar notificaciones reales
             var log = new InventoryEventLog
@@ -46,8 +54,7 @@ namespace Notification.Worker.Consumers
             _context.InventoryEventLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"=== Producto {context.Message.Name} procesado ===");
-            //_logger.LogInformation(payload);
+            _logger.LogInformation($"=== Producto '{message.Name}' (ID: {message.Id}) procesado y guardado en DB ===");
         }
     }
 }
