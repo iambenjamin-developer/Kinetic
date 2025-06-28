@@ -104,6 +104,8 @@ docker run --name notification-db -e POSTGRES_USER=BenjAdmin -e POSTGRES_PASSWOR
 ```
 Add-Migration Initial -Context NotificationDbContext -OutputDir Migrations
 Update-Database  -Context NotificationDbContext
+
+Remove-Migration -Context NotificationDbContext
 ```
 
 
