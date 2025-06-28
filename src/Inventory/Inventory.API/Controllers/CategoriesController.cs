@@ -15,13 +15,28 @@ namespace Inventory.API.Controllers
             _categoryService = categoryService;
         }
 
-        // GET /api/categories
+        /// <summary>
+        /// Obtiene la lista de todas las categorías disponibles.
+        /// </summary>
+        /// <remarks>
+        /// Este endpoint devuelve todas las categorías registradas en el sistema.
+        /// </remarks>
+        /// <response code="200">Lista de categorías obtenida correctamente.</response>
+        /// <response code="500">Error inesperado en el servidor.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
         {
-            var dtos = await _categoryService.GetAllAsync();
-            return Ok(dtos);
+            try
+            {
+                var dtos = await _categoryService.GetAllAsync();
+                return Ok(dtos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"💥 Error inesperado al obtener categorías: {ex.Message}");
+            }
         }
-
     }
 }
