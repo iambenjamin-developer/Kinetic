@@ -91,7 +91,8 @@ docker run --name inventory-db -e POSTGRES_USER=BenjAdmin -e POSTGRES_PASSWORD=M
 ```
 
 ```
-Add-Migration Initial -Context InventoryDbContext -OutputDir Migrations
+AddPendingMessagesTable
+Add-Migration AddPendingMessagesTable -Context InventoryDbContext -OutputDir Migrations
 Update-Database  -Context InventoryDbContext
 ```
 
