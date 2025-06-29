@@ -13,11 +13,11 @@ namespace Inventory.Infrastructure
             if (!context.Categories.Any())
             {
                 var categories = new List<Category>
-    {
-        new Category { Name = "Electrónica" },
-        new Category { Name = "Libros" },
-        new Category { Name = "Alimentos" }
-    };
+                {
+                    new Category { Name = "Electrónica" },
+                    new Category { Name = "Libros" },
+                    new Category { Name = "Alimentos" }
+                };
 
                 context.Categories.AddRange(categories);
                 await context.SaveChangesAsync();
