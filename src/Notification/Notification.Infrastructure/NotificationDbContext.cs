@@ -10,7 +10,7 @@ namespace Notification.Infrastructure
         {
         }
         public DbSet<InventoryEventLog> InventoryEventLogs { get; set; }
-
+        public DbSet<ErrorLog> ErrorLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

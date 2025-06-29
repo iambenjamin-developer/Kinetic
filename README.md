@@ -244,3 +244,19 @@ docker image prune -a -f
 docker-compose up -d
 ```
 
+
+## Migraciones EF Core (en modo desarrollo)
+#### Setear  como proyecto principal API y en Package Manager Console (apuntando a Infrastructure) ejecutar los siguientes comandos:
+```
+
+Add-Migration Initial -Context InventoryDbContext -OutputDir Migrations
+Update-Database  -Context InventoryDbContext
+Remove-Migration -Context InventoryDbContext
+```
+
+#### Setear  como proyecto principal Worker y en Package Manager Console (apuntando a Infrastructure) ejecutar los siguientes comandos:
+```
+Add-Migration Initial -Context NotificationDbContext -OutputDir Migrations
+Update-Database  -Context NotificationDbContext
+Remove-Migration -Context NotificationDbContext
+```
