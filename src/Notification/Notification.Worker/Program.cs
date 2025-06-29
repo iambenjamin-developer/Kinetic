@@ -27,6 +27,7 @@ namespace Notification.Worker
                 x.AddConsumer<ProductCreatedConsumer>();
                 x.AddConsumer<ProductUpdatedConsumer>();
                 x.AddConsumer<ProductDeletedConsumer>();
+                x.AddConsumer<ErrorConsumer>(); // Consumer para mensajes de error
 
                 // Configurar transporte RabbitMQ
                 x.UsingRabbitMq((context, cfg) =>
@@ -74,6 +75,13 @@ namespace Notification.Worker
                             b.ExchangeType = ExchangeType.Direct;
                             b.RoutingKey = "product.deleted";
                         });
+                    });
+
+                    // ---- Cola de error: para procesar mensajes fallidos ----
+                    cfg.ReceiveEndpoint("product-created-queue_error", e =>
+                    {
+                        // No usar reintentos en la cola de error para evitar loops infinitos
+                        e.ConfigureConsumer<ErrorConsumer>(context);
                     });
                 });
             });

@@ -19,14 +19,12 @@ namespace Notification.Worker.Consumers
 
         public async Task Consume(ConsumeContext<ProductCreated> context)
         {
-            /*
             var retryAttempt = context.GetRetryAttempt();
             if (retryAttempt < 3) // Simular fallos en los primeros 3 intentos
             {
                 _logger.LogWarning($"=== Intento #{retryAttempt} de procesar el Product {context.Message.Name} ===");
                 throw new Exception("=== Fallo simulado para probar reintentos ===");
             }
-            */
 
             var message = context.Message;
 
@@ -42,7 +40,7 @@ namespace Notification.Worker.Consumers
             _context.InventoryEventLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"=== Producto {context.Message.Name} procesado ===");
+            _logger.LogInformation($"=== Producto {context.Message.Name} procesado exitosamente en intento #{retryAttempt} ===");
             //_logger.LogInformation(payload);
         }
     }
