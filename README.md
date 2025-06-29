@@ -111,6 +111,63 @@ graph LR
     G --> F
 ```
 
+## Componentes del Sistema de Mensajes Pendientes
+
+```mermaid
+graph LR
+    subgraph "Entidades"
+        A[PendingMessage]
+        B[Product]
+        C[Category]
+    end
+    
+    subgraph "Servicios"
+        D[PendingMessageService]
+        E[ResilientMessagePublisher]
+        F[PendingMessageProcessorService]
+    end
+    
+    subgraph "Interfaces"
+        G[IPendingMessageService]
+        H[IResilientMessagePublisher]
+        I[IResiliencePolicy]
+    end
+    
+    subgraph "Políticas"
+        J[Timeout Policy]
+        K[Circuit Breaker Policy]
+    end
+    
+    subgraph "Infraestructura"
+        L[InventoryDbContext]
+        M[RabbitMQ]
+    end
+    
+    A --> D
+    D --> G
+    E --> H
+    F --> G
+    E --> I
+    I --> J
+    I --> K
+    D --> L
+    E --> M
+    F --> M
+```
+
+## Estados de los Mensajes
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Mensaje creado
+    Pending --> Processing: Background service lo toma
+    Processing --> Processed: Envío exitoso
+    Processing --> Pending: Error en envío
+    Pending --> Failed: Máximo de reintentos alcanzado
+    Processed --> [*]: Limpieza automática
+    Failed --> [*]: Requiere intervención manual
+```
+
 ## Endpoints de la API
 
 [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html)
