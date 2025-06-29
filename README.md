@@ -197,25 +197,9 @@ Para facilitar las pruebas de la API, hemos creado una colección de Postman que
 1. **Descargar la colección**: [Kinetic.postman_collection.json](Kinetic.postman_collection.json)
 2. **Importar en Postman**:
    - Abrir Postman
-   - Hacer clic en "Import"
+   - Hacer clic en "File" y luego "Import"
    - Seleccionar el archivo `Kinetic.postman_collection.json`
    - La colección se importará automáticamente
-
-### Configuración del Ambiente Local
-Antes de usar la colección, asegúrate de:
-
-1. **Iniciar los servicios**:
-   ```bash
-   docker-compose up -d
-   cd src/Inventory/Inventory.API
-   dotnet run
-   ```
-
-2. **Verificar que la API esté corriendo** en: `http://localhost:5000`
-
-3. **Configurar variables de entorno** en Postman (opcional):
-   - `base_url`: `http://localhost:5000`
-   - `api_version`: `v1`
 
 ### Endpoints Incluidos en la Colección
 
@@ -228,10 +212,6 @@ Antes de usar la colección, asegúrate de:
 
 #### **Categorías**
 - `GET /api/categories` - Obtener todas las categorías
-- `GET /api/categories/{id}` - Obtener categoría por ID
-- `POST /api/categories` - Crear nueva categoría
-- `PUT /api/categories/{id}` - Actualizar categoría
-- `DELETE /api/categories/{id}` - Eliminar categoría
 
 ### Ejemplos de Uso
 
@@ -246,14 +226,6 @@ POST /api/products
 }
 ```
 
-#### **Crear una Categoría**
-```json
-POST /api/categories
-{
-  "name": "Electrónicos",
-  "description": "Productos electrónicos"
-}
-```
 
 ### Monitoreo de Eventos
 Después de ejecutar las pruebas, puedes verificar que los eventos se procesaron correctamente:
@@ -295,7 +267,7 @@ Después de ejecutar las pruebas, puedes verificar que los eventos se procesaron
 - **Escalabilidad** con procesamiento en background
 - **Resiliencia** con políticas de timeout y circuit breaker 
 
-### Docker Compose para el Sistema de Notificaciones de Inventario
+### Configuración del Ambiente Local
 **Desde la raíz donde se clono el repositorio (donde está el docker-compose)**
 
 #### Detener y eliminar recursos de Docker Compose
