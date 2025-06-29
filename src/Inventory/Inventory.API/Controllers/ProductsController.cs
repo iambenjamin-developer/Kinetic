@@ -1,8 +1,6 @@
 ﻿using Inventory.Application.DTOs;
 using Inventory.Application.Interfaces;
-using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using Polly;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
 using SharedKernel.Contracts;
@@ -14,14 +12,12 @@ namespace Inventory.API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IResiliencePolicy _resiliencePolicy;
+        private readonly IResilientMessagePublisher _resilientMessagePublisher;
 
-        public ProductsController(IProductService productService, IPublishEndpoint publishEndpoint, IResiliencePolicy resiliencePolicy)
+        public ProductsController(IProductService productService, IResilientMessagePublisher resilientMessagePublisher)
         {
             _productService = productService;
-            _publishEndpoint = publishEndpoint;
-            _resiliencePolicy = resiliencePolicy;
+            _resilientMessagePublisher = resilientMessagePublisher;
         }
 
         /// <summary>
@@ -66,11 +62,11 @@ namespace Inventory.API.Controllers
         /// <param name="dto">Datos del producto a crear.</param>
         /// <remarks>
         /// Crea un producto en la base de datos y publica un evento `ProductCreated` mediante RabbitMQ.
-        /// Se aplican políticas de resiliencia (timeout y circuit breaker).
+        /// Si RabbitMQ no está disponible, el mensaje se guarda como pendiente y se procesará cuando el servicio esté disponible.
         /// </remarks>
         /// <response code="201">Producto creado correctamente.</response>
-        /// <response code="504">Tiempo de espera agotado al publicar el evento.</response>
-        /// <response code="503">Circuito abierto - RabbitMQ no disponible.</response>
+        /// <response code="504">Tiempo de espera agotado al publicar el evento (mensaje guardado como pendiente).</response>
+        /// <response code="503">Circuito abierto - RabbitMQ no disponible (mensaje guardado como pendiente).</response>
         /// <response code="500">Error inesperado.</response>
         [HttpPost]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
@@ -92,22 +88,17 @@ namespace Inventory.API.Controllers
                     Category: newProductDto.Category.Name
                 );
 
-                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
-                    _publishEndpoint.Publish(eventMessage, publishCtx =>
-                    {
-                        publishCtx.SetRoutingKey("product.created");
-                    }, cancellationToken),
-                    CancellationToken.None);
+                await _resilientMessagePublisher.PublishWithResilienceAsync(eventMessage, "product.created");
 
                 return CreatedAtAction(nameof(GetById), new { id = newProductDto.Id }, newProductDto);
             }
             catch (TimeoutRejectedException)
             {
-                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (BrokenCircuitException)
             {
-                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (Exception ex)
             {
@@ -122,12 +113,12 @@ namespace Inventory.API.Controllers
         /// <param name="dto">Datos actualizados del producto.</param>
         /// <remarks>
         /// Actualiza la información del producto y publica un evento `ProductUpdated`.
-        /// Se aplican políticas de resiliencia.
+        /// Si RabbitMQ no está disponible, el mensaje se guarda como pendiente.
         /// </remarks>
         /// <response code="204">Actualización exitosa.</response>
         /// <response code="404">Producto no encontrado.</response>
-        /// <response code="504">Timeout al publicar el evento.</response>
-        /// <response code="503">Circuito abierto.</response>
+        /// <response code="504">Timeout al publicar el evento (mensaje guardado como pendiente).</response>
+        /// <response code="503">Circuito abierto (mensaje guardado como pendiente).</response>
         /// <response code="500">Error inesperado.</response>
         [HttpPut("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -145,22 +136,17 @@ namespace Inventory.API.Controllers
 
                 var eventMessage = new ProductUpdated(id, dto.Name, dto.Stock);
 
-                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
-                    _publishEndpoint.Publish(eventMessage, context =>
-                    {
-                        context.SetRoutingKey("product.updated");
-                    }, cancellationToken),
-                    CancellationToken.None);
+                await _resilientMessagePublisher.PublishWithResilienceAsync(eventMessage, "product.updated");
 
                 return NoContent();
             }
             catch (TimeoutRejectedException)
             {
-                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (BrokenCircuitException)
             {
-                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (Exception ex)
             {
@@ -174,12 +160,12 @@ namespace Inventory.API.Controllers
         /// <param name="id">ID del producto a eliminar.</param>
         /// <remarks>
         /// Elimina el producto de la base de datos y publica un evento `ProductDeleted`.
-        /// Se aplican políticas de resiliencia.
+        /// Si RabbitMQ no está disponible, el mensaje se guarda como pendiente.
         /// </remarks>
         /// <response code="204">Eliminación exitosa.</response>
         /// <response code="404">Producto no encontrado.</response>
-        /// <response code="504">Timeout al publicar el evento.</response>
-        /// <response code="503">Circuito abierto.</response>
+        /// <response code="504">Timeout al publicar el evento (mensaje guardado como pendiente).</response>
+        /// <response code="503">Circuito abierto (mensaje guardado como pendiente).</response>
         /// <response code="500">Error inesperado.</response>
         [HttpDelete("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -197,22 +183,17 @@ namespace Inventory.API.Controllers
 
                 var eventMessage = new ProductDeleted(id);
 
-                await _resiliencePolicy.ExecuteAsync(cancellationToken =>
-                    _publishEndpoint.Publish(eventMessage, context =>
-                    {
-                        context.SetRoutingKey("product.deleted");
-                    }, cancellationToken),
-                    CancellationToken.None);
+                await _resilientMessagePublisher.PublishWithResilienceAsync(eventMessage, "product.deleted");
 
                 return NoContent();
             }
             catch (TimeoutRejectedException)
             {
-                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento.");
+                return StatusCode(504, "⏳ Tiempo de espera agotado al publicar el evento. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (BrokenCircuitException)
             {
-                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible.");
+                return StatusCode(503, "⛔ Circuito abierto - el servicio de mensajería no está disponible. El mensaje se guardó como pendiente y se procesará cuando el servicio esté disponible.");
             }
             catch (Exception ex)
             {
