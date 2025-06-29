@@ -189,6 +189,90 @@ graph TD
     I --> J
 ```
 
+## Pruebas con Postman
+
+### Descargar la Colección
+Para facilitar las pruebas de la API, hemos creado una colección de Postman que incluye todos los endpoints disponibles.
+
+1. **Descargar la colección**: [Kinetic.postman_collection.json](Kinetic.postman_collection.json)
+2. **Importar en Postman**:
+   - Abrir Postman
+   - Hacer clic en "Import"
+   - Seleccionar el archivo `Kinetic.postman_collection.json`
+   - La colección se importará automáticamente
+
+### Configuración del Ambiente Local
+Antes de usar la colección, asegúrate de:
+
+1. **Iniciar los servicios**:
+   ```bash
+   docker-compose up -d
+   cd src/Inventory/Inventory.API
+   dotnet run
+   ```
+
+2. **Verificar que la API esté corriendo** en: `http://localhost:5000`
+
+3. **Configurar variables de entorno** en Postman (opcional):
+   - `base_url`: `http://localhost:5000`
+   - `api_version`: `v1`
+
+### Endpoints Incluidos en la Colección
+
+#### **Productos**
+- `GET /api/products` - Obtener todos los productos
+- `GET /api/products/{id}` - Obtener producto por ID
+- `POST /api/products` - Crear nuevo producto
+- `PUT /api/products/{id}` - Actualizar producto
+- `DELETE /api/products/{id}` - Eliminar producto
+
+#### **Categorías**
+- `GET /api/categories` - Obtener todas las categorías
+- `GET /api/categories/{id}` - Obtener categoría por ID
+- `POST /api/categories` - Crear nueva categoría
+- `PUT /api/categories/{id}` - Actualizar categoría
+- `DELETE /api/categories/{id}` - Eliminar categoría
+
+### Ejemplos de Uso
+
+#### **Crear un Producto**
+```json
+POST /api/products
+{
+  "name": "Producto de Prueba",
+  "description": "Descripción del producto",
+  "price": 99.99,
+  "categoryId": 1
+}
+```
+
+#### **Crear una Categoría**
+```json
+POST /api/categories
+{
+  "name": "Electrónicos",
+  "description": "Productos electrónicos"
+}
+```
+
+### Monitoreo de Eventos
+Después de ejecutar las pruebas, puedes verificar que los eventos se procesaron correctamente:
+
+1. **RabbitMQ Management UI**: `http://localhost:15672`
+   - Usuario: `rabbitAdmin`
+   - Contraseña: `secretPassword`
+
+2. **Base de datos de notificaciones**:
+   ```sql
+   SELECT * FROM "InventoryEventLogs" ORDER BY "ReceivedAt" DESC;
+   ```
+
+### Notas Importantes
+- La colección incluye ejemplos de datos para cada endpoint
+- Los IDs se generan automáticamente por la base de datos
+- Los eventos se procesan de forma asíncrona por el Notification.Worker
+- Puedes usar la colección para probar el manejo de errores y reintentos
+
 ## Características Principales
 
 - **API REST completa** con todos los endpoints requeridos
