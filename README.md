@@ -154,36 +154,35 @@ graph TD
 - **Escalabilidad** con procesamiento en background
 - **Resiliencia** con políticas de timeout y circuit breaker 
 
-# Docker Compose para el Sistema de Notificaciones de Inventario
+### Docker Compose para el Sistema de Notificaciones de Inventario
 **Desde la raíz donde se clono el repositorio (donde está el docker-compose)**
 
-## Detener y eliminar recursos de Docker Compose
+#### Detener y eliminar recursos de Docker Compose
 ```
 docker-compose down --volumes --remove-orphans
 ```
 
-## Borrar contenedores detenidos, volúmenes sin usar, imágenes y redes no referenciadas
+#### Borrar contenedores detenidos, volúmenes sin usar, imágenes y redes no referenciadas
 ```
 docker container prune -f
 ```
 
-## Eliminar volúmenes sin usar
+#### Eliminar volúmenes sin usar
 ```
 docker volume prune -f
 ```
 
-
-## Eliminar redes no utilizadas
+#### Eliminar redes no utilizadas
 ```
 docker network prune -f
 ```
 
-## (Opcional) Eliminar imágenes no utilizadas 
+#### (Opcional) Eliminar imágenes no utilizadas 
 ```
 docker image prune -a -f
 ```
 
-## Levantar el docker compose
+#### Levantar el docker compose
 ```
 docker-compose up -d
 ```
