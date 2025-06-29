@@ -27,7 +27,7 @@ namespace Notification.Worker
                 x.AddConsumer<ProductCreatedConsumer>();
                 x.AddConsumer<ProductUpdatedConsumer>();
                 x.AddConsumer<ProductDeletedConsumer>();
-                x.AddConsumer<ErrorConsumer>(); // Consumer para mensajes de error
+                x.AddConsumer<ProductCreatedConsumerError>(); // Consumer para mensajes de error en la creación de productos
 
                 // Configurar transporte RabbitMQ
                 x.UsingRabbitMq((context, cfg) =>
@@ -80,8 +80,8 @@ namespace Notification.Worker
                     // ---- Cola de error: para procesar mensajes fallidos ----
                     cfg.ReceiveEndpoint("product-created-queue_error", e =>
                     {
-                        // No usar reintentos en la cola de error para evitar loops infinitos
-                        e.ConfigureConsumer<ErrorConsumer>(context);
+                        // No usar reintentos en la cola de error para evitar loops infinitos NO vincular al exchange - MassTransit mueve mensajes automáticamente
+                        e.ConfigureConsumer<ProductCreatedConsumerError>(context);
                     });
                 });
             });

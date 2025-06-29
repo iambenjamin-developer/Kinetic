@@ -10,12 +10,12 @@ namespace Notification.Worker.Consumers
     /// Consumer para procesar mensajes que han fallado después de todos los reintentos
     /// Este consumer se ejecuta cuando un mensaje termina en la cola de error
     /// </summary>
-    public class ErrorConsumer : IConsumer<ProductCreated>
+    public class ProductCreatedConsumerError : IConsumer<ProductCreated>
     {
-        private readonly ILogger<ErrorConsumer> _logger;
+        private readonly ILogger<ProductCreatedConsumerError> _logger;
         private readonly NotificationDbContext _context;
 
-        public ErrorConsumer(ILogger<ErrorConsumer> logger, NotificationDbContext context)
+        public ProductCreatedConsumerError(ILogger<ProductCreatedConsumerError> logger, NotificationDbContext context)
         {
             _logger = logger;
             _context = context;
