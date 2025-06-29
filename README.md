@@ -297,7 +297,7 @@ docker image prune -a -f
 
 #### Levantar el docker compose
 ```
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 
