@@ -179,7 +179,7 @@ graph TD
     
     subgraph "Flujo Exitoso"
         SaveLog[Guardar en InventoryEventLogs]
-        SuccessResponse[✅ Procesado correctamente]
+        SuccessResponse[Procesado correctamente]
     end
     
     subgraph "Flujo de Error"
@@ -187,31 +187,31 @@ graph TD
         Retry{Retry < 3?}
         ErrorQueue[Error Queue]
         ErrorLog[ErrorLog Table]
-        NoSaveLog[❌ NO se guarda en InventoryEventLogs]
+        NoSaveLog[NO se guarda en InventoryEventLogs]
     end
     
     subgraph "Tablas Afectadas"
         subgraph "Notification DB"
-            InventoryEventLogs[InventoryEventLogs<br/>✅ Se guarda (éxito)<br/>❌ NO se guarda (error)]
-            ErrorLogs[ErrorLogs<br/>📈 Se incrementa (solo en error)]
+            InventoryEventLogs[InventoryEventLogs<br/>Se guarda en exito<br/>NO se guarda en error]
+            ErrorLogs[ErrorLogs<br/>Se incrementa solo en error]
         end
         
         subgraph "RabbitMQ"
-            MainQueue[Main Queue<br/>📉 Mensaje removido]
-            ErrorQueue[Error Queue<br/>📈 Mensaje agregado (solo en error)]
+            MainQueue[Main Queue<br/>Mensaje removido]
+            ErrorQueue[Error Queue<br/>Mensaje agregado solo en error]
         end
     end
     
     Message --> Consumer
     Consumer --> Success
     
-    Success -->|Sí| SaveLog
+    Success -->|Si| SaveLog
     SaveLog --> SuccessResponse
     SaveLog --> InventoryEventLogs
     
     Success -->|No| Error
-    Error -->|Sí| Retry
-    Retry -->|Sí| Consumer
+    Error -->|Si| Retry
+    Retry -->|Si| Consumer
     Retry -->|No| ErrorQueue
     ErrorQueue --> ErrorLog
     ErrorQueue --> NoSaveLog
