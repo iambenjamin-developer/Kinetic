@@ -1,6 +1,4 @@
-# Diagramas de Arquitectura - Kinetic
-
-## 1. Arquitectura General de la Solución
+## Arquitectura General de la Solución
 
 ```mermaid
 graph TB
@@ -58,7 +56,7 @@ graph TB
     Contracts --> Worker
 ```
 
-## 2. Flujo de Patrones de Mensajería Implementados
+## Flujo de Patrones de Mensajería Implementados
 
 ```mermaid
 sequenceDiagram
@@ -95,7 +93,7 @@ sequenceDiagram
     end
 ```
 
-## 3. Flujo de Patrones de Resiliencia Implementados
+## Flujo de Patrones de Resiliencia Implementados
 
 ```mermaid
 graph LR
@@ -131,7 +129,7 @@ graph LR
     style RETRY fill:#99ff99
 ```
 
-## 4. Caso de Uso: Cuando se cae RabbitMQ
+## Caso de Uso: Cuando se cae RabbitMQ
 
 ```mermaid
 graph TD
@@ -167,7 +165,7 @@ graph TD
     style Worker fill:#ff9999
 ```
 
-## 5. Caso de Uso: Cuando la cola genera error
+## Caso de Uso: Cuando la cola genera error
 
 ```mermaid
 graph TD
@@ -224,61 +222,6 @@ graph TD
     style SaveLog fill:#99ff99
     style SuccessResponse fill:#99ff99
 ```
-
-## 6. Resumen de Componentes y Responsabilidades
-
-```mermaid
-graph TB
-    subgraph "Inventory.API (Productor)"
-        API[API REST]
-        ProductService[ProductService]
-        ResilientPublisher[ResilientMessagePublisher]
-        PendingService[PendingMessageService]
-        BackgroundProcessor[Background Processor]
-    end
-    
-    subgraph "Notification.Worker (Consumidor)"
-        Worker[Worker Service]
-        Consumers[Consumers]
-        RetryPolicy[Retry Policy]
-    end
-    
-    subgraph "Shared Kernel"
-        Contracts[Event Contracts]
-    end
-    
-    subgraph "Infraestructura"
-        RabbitMQ[RabbitMQ]
-        InventoryDB[(Inventory DB)]
-        NotificationDB[(Notification DB)]
-    end
-    
-    subgraph "Patrones Implementados"
-        CircuitBreaker[Circuit Breaker]
-        Timeout[Timeout Policy]
-        MessagePersistence[Message Persistence]
-        AutomaticRetry[Automatic Retry]
-        ErrorHandling[Error Handling]
-    end
-    
-    API --> ProductService
-    ProductService --> ResilientPublisher
-    ResilientPublisher --> CircuitBreaker
-    ResilientPublisher --> Timeout
-    ResilientPublisher --> MessagePersistence
-    MessagePersistence --> PendingService
-    BackgroundProcessor --> AutomaticRetry
-    
-    Worker --> Consumers
-    Consumers --> RetryPolicy
-    Consumers --> ErrorHandling
-    
-    style CircuitBreaker fill:#ff9999
-    style Timeout fill:#99ccff
-    style MessagePersistence fill:#99ff99
-    style AutomaticRetry fill:#ffcc99
-    style ErrorHandling fill:#ff9999
-``` 
 
 ---
 
@@ -765,3 +708,59 @@ graph LR
 4. Sistema puede reintentar manualmente o notificar
 
 **Este sistema garantiza que ningún mensaje se pierda y que todos los errores sean registrados y manejados apropiadamente.** 
+
+
+## Resumen de Componentes y Responsabilidades
+
+```mermaid
+graph TB
+    subgraph "Inventory.API (Productor)"
+        API[API REST]
+        ProductService[ProductService]
+        ResilientPublisher[ResilientMessagePublisher]
+        PendingService[PendingMessageService]
+        BackgroundProcessor[Background Processor]
+    end
+    
+    subgraph "Notification.Worker (Consumidor)"
+        Worker[Worker Service]
+        Consumers[Consumers]
+        RetryPolicy[Retry Policy]
+    end
+    
+    subgraph "Shared Kernel"
+        Contracts[Event Contracts]
+    end
+    
+    subgraph "Infraestructura"
+        RabbitMQ[RabbitMQ]
+        InventoryDB[(Inventory DB)]
+        NotificationDB[(Notification DB)]
+    end
+    
+    subgraph "Patrones Implementados"
+        CircuitBreaker[Circuit Breaker]
+        Timeout[Timeout Policy]
+        MessagePersistence[Message Persistence]
+        AutomaticRetry[Automatic Retry]
+        ErrorHandling[Error Handling]
+    end
+    
+    API --> ProductService
+    ProductService --> ResilientPublisher
+    ResilientPublisher --> CircuitBreaker
+    ResilientPublisher --> Timeout
+    ResilientPublisher --> MessagePersistence
+    MessagePersistence --> PendingService
+    BackgroundProcessor --> AutomaticRetry
+    
+    Worker --> Consumers
+    Consumers --> RetryPolicy
+    Consumers --> ErrorHandling
+    
+    style CircuitBreaker fill:#ff9999
+    style Timeout fill:#99ccff
+    style MessagePersistence fill:#99ff99
+    style AutomaticRetry fill:#ffcc99
+    style ErrorHandling fill:#ff9999
+``` 
