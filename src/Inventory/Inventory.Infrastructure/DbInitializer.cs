@@ -16,7 +16,8 @@ namespace Inventory.Infrastructure
                 {
                     new Category { Name = "Electrónica" },
                     new Category { Name = "Libros" },
-                    new Category { Name = "Alimentos" }
+                    new Category { Name = "Alimentos" },
+                    new Category { Name = "Error simulado" }
                 };
 
                 context.Categories.AddRange(categories);
