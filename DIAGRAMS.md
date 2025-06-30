@@ -171,37 +171,58 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph "Flujo de Error"
+    subgraph "Flujo de Mensaje"
         Message[Message llega a Worker]
         Consumer[Consumer procesa]
+        Success{Procesamiento exitoso?}
+    end
+    
+    subgraph "Flujo Exitoso"
+        SaveLog[Guardar en InventoryEventLogs]
+        SuccessResponse[✅ Procesado correctamente]
+    end
+    
+    subgraph "Flujo de Error"
         Error{Error en procesamiento?}
         Retry{Retry < 3?}
         ErrorQueue[Error Queue]
         ErrorLog[ErrorLog Table]
+        NoSaveLog[❌ NO se guarda en InventoryEventLogs]
     end
     
     subgraph "Tablas Afectadas"
         subgraph "Notification DB"
-            InventoryEventLogs[InventoryEventLogs<br/>❌ No se guarda]
-            ErrorLogs[ErrorLogs<br/>📈 Se incrementa]
+            InventoryEventLogs[InventoryEventLogs<br/>✅ Se guarda (éxito)<br/>❌ NO se guarda (error)]
+            ErrorLogs[ErrorLogs<br/>📈 Se incrementa (solo en error)]
         end
         
         subgraph "RabbitMQ"
             MainQueue[Main Queue<br/>📉 Mensaje removido]
-            ErrorQueue[Error Queue<br/>📈 Mensaje agregado]
+            ErrorQueue[Error Queue<br/>📈 Mensaje agregado (solo en error)]
         end
     end
     
     Message --> Consumer
-    Consumer --> Error
+    Consumer --> Success
+    
+    Success -->|Sí| SaveLog
+    SaveLog --> SuccessResponse
+    SaveLog --> InventoryEventLogs
+    
+    Success -->|No| Error
     Error -->|Sí| Retry
     Retry -->|Sí| Consumer
     Retry -->|No| ErrorQueue
     ErrorQueue --> ErrorLog
+    ErrorQueue --> NoSaveLog
+    ErrorLog --> ErrorLogs
+    NoSaveLog --> InventoryEventLogs
     
     style ErrorLogs fill:#ffcc99
     style ErrorQueue fill:#ffcc99
-    style InventoryEventLogs fill:#ff9999
+    style NoSaveLog fill:#ff9999
+    style SaveLog fill:#99ff99
+    style SuccessResponse fill:#99ff99
 ```
 
 ## 6. Resumen de Componentes y Responsabilidades
