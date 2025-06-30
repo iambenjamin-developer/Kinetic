@@ -56,15 +56,11 @@ graph TB
 
 > Ejecutar desde la raíz del proyecto, donde se encuentra el archivo `docker-compose.yml`.
 
----
-
 ### 1. Detener y eliminar recursos de Docker Compose
 
 ```
 docker-compose down --volumes --remove-orphans
 ```
-
----
 
 ### 2. Limpiar recursos de Docker no utilizados
 
@@ -75,8 +71,6 @@ docker network prune -f        # Eliminar redes no utilizadas
 docker image prune -a -f       # (Opcional) Eliminar imágenes no utilizadas
 ```
 
----
-
 ### 3. Levantar el entorno con nuevo build
 
 ```
@@ -86,33 +80,14 @@ docker-compose up -d --build
 ---
 
 
-
-
 ## Endpoints de la API
 
 [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html)
 
-```mermaid
-graph TD
-    A[Inventory API] --> B[GET /api/products]
-    A --> C[GET /api/products/:id]
-    A --> D[POST /api/products]
-    A --> E[PUT /api/products/:id]
-    A --> F[DELETE /api/products/:id]
-
-    D --> G[ProductCreated Event]
-    E --> H[ProductUpdated Event]
-    F --> I[ProductDeleted Event]
-
-    G --> J[RabbitMQ]
-    H --> J
-    I --> J
-```
 
 ## Pruebas con Postman
 
 ### Descargar la Colección
-Para facilitar las pruebas de la API, hemos creado una colección de Postman que incluye todos los endpoints disponibles.
 
 1. **Descargar la colección**: [Kinetic.postman_collection.json](Kinetic.postman_collection.json)
 2. **Importar en Postman**:
@@ -146,8 +121,26 @@ POST /api/products
 }
 ```
 
+---
 
+```mermaid
+graph TD
+    A[Inventory API] --> B[GET /api/products]
+    A --> C[GET /api/products/:id]
+    A --> D[POST /api/products]
+    A --> E[PUT /api/products/:id]
+    A --> F[DELETE /api/products/:id]
 
+    D --> G[ProductCreated Event]
+    E --> H[ProductUpdated Event]
+    F --> I[ProductDeleted Event]
+
+    G --> J[RabbitMQ]
+    H --> J
+    I --> J
+```
+
+---
 
 ## Flujo de Datos
 
