@@ -172,7 +172,7 @@ graph TD
     subgraph "Flujo de Error"
         Error{Error en procesamiento?}
         Retry{Retry < 3?}
-        ErrorQueue[Error Queue (Dead Letter Queue)]
+        ErrorQueue["Error Queue (Dead Letter Queue)"]
         ErrorLog[ErrorLog Table]
         NoSaveLog[NO se guarda en InventoryEventLogs]
     end
@@ -185,7 +185,7 @@ graph TD
         
         subgraph "RabbitMQ"
             MainQueue[Main Queue<br/>Mensaje removido]
-            ErrorQueue[Error Queue (Dead Letter Queue)<br/>Mensaje agregado solo en error]
+            ErrorQueue["Error Queue (Dead Letter Queue)<br/>Mensaje agregado solo en error"]
         end
     end
     
