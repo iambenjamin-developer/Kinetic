@@ -1,6 +1,4 @@
-# Kinetic - Sistema de Notificaciones de Inventario - Arquitectura
-
-## Diagrama de Arquitectura General
+## Kinetic - Diagrama de Arquitectura General
 
 ```mermaid
 graph TB
@@ -52,8 +50,9 @@ graph TB
     B3 --> D
     B4 --> B3
 ```
+---
 
-# Limpieza de Docker y Levantamiento del Entorno Local
+## Limpieza de Docker y Levantamiento del Entorno Local
 
 > Ejecutar desde la raíz del proyecto, donde se encuentra el archivo `docker-compose.yml`.
 
