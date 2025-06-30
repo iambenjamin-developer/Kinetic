@@ -53,39 +53,41 @@ graph TB
     B4 --> B3
 ```
 
+# Limpieza de Docker y Levantamiento del Entorno Local
 
-### Configuración del Ambiente Local
-**Desde la raíz donde se clono el repositorio (donde está el docker-compose)**
+> Ejecutar desde la raíz del proyecto, donde se encuentra el archivo `docker-compose.yml`.
 
-#### Detener y eliminar recursos de Docker Compose
+---
+
+### 1. Detener y eliminar recursos de Docker Compose
+
 ```
 docker-compose down --volumes --remove-orphans
 ```
 
-#### Borrar contenedores detenidos, volúmenes sin usar, imágenes y redes no referenciadas
+---
+
+### 2. Limpiar recursos de Docker no utilizados
+
 ```
-docker container prune -f
+docker container prune -f      # Eliminar contenedores detenidos
+docker volume prune -f         # Eliminar volúmenes no utilizados
+docker network prune -f        # Eliminar redes no utilizadas
+docker image prune -a -f       # (Opcional) Eliminar imágenes no utilizadas
 ```
 
-#### Eliminar volúmenes sin usar
-```
-docker volume prune -f
-```
+---
 
-#### Eliminar redes no utilizadas
-```
-docker network prune -f
-```
+### 3. Levantar el entorno con nuevo build
 
-#### (Opcional) Eliminar imágenes no utilizadas 
-```
-docker image prune -a -f
-```
-
-#### Levantar el docker compose
 ```
 docker-compose up -d --build
 ```
+
+---
+
+
+
 
 ## Endpoints de la API
 
