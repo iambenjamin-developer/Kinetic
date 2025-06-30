@@ -112,7 +112,6 @@ graph LR
     subgraph "Estados"
         CLOSED[Circuito Cerrado]
         OPEN[Circuito Abierto]
-        HALF[Circuito Semi-Abierto]
     end
     
     PUBLISHER --> CB
@@ -122,11 +121,6 @@ graph LR
     
     CB --> CLOSED
     CB --> OPEN
-    CB --> HALF
-    
-    style CB fill:#ff9999
-    style TO fill:#99ccff
-    style RETRY fill:#99ff99
 ```
 
 ## Caso de Uso: Cuando se cae RabbitMQ
@@ -158,11 +152,6 @@ graph TD
         Background --> PendingMessages
         PendingMessages --> InventoryEventLogs
     end
-    
-    style PendingMessages fill:#ffcc99
-    style InventoryEventLogs fill:#ff9999
-    style ErrorLogs fill:#ff9999
-    style Worker fill:#ff9999
 ```
 
 ## Caso de Uso: Cuando la cola genera error
@@ -215,12 +204,6 @@ graph TD
     ErrorQueue --> NoSaveLog
     ErrorLog --> ErrorLogs
     NoSaveLog --> InventoryEventLogs
-    
-    style ErrorLogs fill:#ffcc99
-    style ErrorQueue fill:#ffcc99
-    style NoSaveLog fill:#ff9999
-    style SaveLog fill:#99ff99
-    style SuccessResponse fill:#99ff99
 ```
 
 ---
